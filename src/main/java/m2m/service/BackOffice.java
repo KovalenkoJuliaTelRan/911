@@ -3,12 +3,12 @@ package m2m.service;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 
 import m2m.repo.SensorRepo;
 import m2m.repo.entities.SensorDoc;
@@ -23,8 +23,23 @@ public class BackOffice implements IBackOffice
 	@Override
 	public List<Integer> getIdBigValues(LocalDateTime from, LocalDateTime to, int sensorValue)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		return sensorRepo.findAllBy().filter(s -> isCorrectDate(s, from, to)).filter(s -> s.avgValue > sensorValue)
+				.map(s -> s.sensorId).toList();
+	}
+
+	private boolean isCorrectDate(SensorDoc s, LocalDateTime from, LocalDateTime to)
+	{
+
+		long milissFrom = dateTimeToMiliss(from);
+		long milissTo = dateTimeToMiliss(to);
+		return s.timestamp > milissFrom && s.timestamp < milissTo;
+	}
+
+	private long dateTimeToMiliss(LocalDateTime dateTime)
+	{
+
+		ZonedDateTime zdt = dateTime.atZone(ZoneOffset.systemDefault());
+		return zdt.toInstant().toEpochMilli();
 	}
 
 	@Override
@@ -37,9 +52,8 @@ public class BackOffice implements IBackOffice
 	@Override
 	public List<LocalDateTime> getDatesBigValues(int sensorId, LocalDateTime from, LocalDateTime to, int sensorValue)
 	{
-		List<SensorDoc> sensors = sensorRepo
-				.findBySensorIdAndTimestampBetweenAndAvgValueGreaterThan(sensorId,
-						getTimeMilli(from), getTimeMilli(to), sensorValue);
+		List<SensorDoc> sensors = sensorRepo.findBySensorIdAndTimestampBetweenAndAvgValueGreaterThan(sensorId,
+				getTimeMilli(from), getTimeMilli(to), sensorValue);
 
 		return sensors.stream().map(this::getLocalDateTime).collect(Collectors.toList());
 	}
@@ -48,11 +62,10 @@ public class BackOffice implements IBackOffice
 	{
 		return ldt.toEpochSecond(ZoneOffset.ofTotalSeconds(0)) * 1000;
 	}
-	
+
 	private LocalDateTime getLocalDateTime(SensorDoc sensor)
 	{
-		return LocalDateTime.ofEpochSecond(sensor.timestamp / 1000, 0, 
-				ZoneOffset.ofTotalSeconds(0));
+		return LocalDateTime.ofEpochSecond(sensor.timestamp / 1000, 0, ZoneOffset.ofTotalSeconds(0));
 	}
 
 	@Override
@@ -65,9 +78,7 @@ public class BackOffice implements IBackOffice
 	@Override
 	public SensorStatistics getSensorStatistics(int sensorId, LocalDateTime from, LocalDateTime to)
 	{
-		return sensorRepo.getSensorStatistics(sensorId, getTimeMilli(from), 
-				getTimeMilli(to));
+		return sensorRepo.getSensorStatistics(sensorId, getTimeMilli(from), getTimeMilli(to));
 	}
 
-	
 }

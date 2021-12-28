@@ -2,6 +2,7 @@ package m2m.repo;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 
@@ -13,5 +14,7 @@ SensorsStatisticsRepo
 
 	List<SensorDoc> findBySensorIdAndTimestampBetweenAndAvgValueGreaterThan(int sensorId, long l,
 			long m, int sensorValue);
+
+	Stream<SensorDoc> findAllBy();
 
 }
